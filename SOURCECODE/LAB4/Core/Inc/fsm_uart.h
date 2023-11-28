@@ -12,5 +12,6 @@
 #define MAX_BUFFER_SIZE  30
 void command_parser_fsm ();
 void uart_communiation_fsm ();
+void printADC();
 
 #endif /* INC_FSM_UART_H_ */

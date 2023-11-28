@@ -8,7 +8,8 @@
 #include "fsm_uart.h"
 #include "main.h"
 #include <inttypes.h>
-#include "software_timer.h"
+//#include "software_timer.h"
+#include "scheduler.h"
 enum CMD_STATE {
 		CMD_INIT,
 		CMD_BODY
@@ -38,10 +39,16 @@ void command_parser_fsm (){
 			idx_cmd_data = 0;
 			cmd_flag = 0;
 			cmd_state = CMD_BODY;
+			clear();
 		}
+		clear();
 		break;
 	case CMD_BODY://scan for a command or a string to store
-		if(buffer[curr_idx_buffer]=='!') break;
+		if(buffer[curr_idx_buffer]=='!'){//clear buffer when "!" is received
+			curr_idx_buffer++;
+			clear();
+			break;
+		}
 		if(buffer[curr_idx_buffer]=='#') {
 			cmd_state = CMD_INIT;
 			if(compare(cmd_data, "RST",3) == 1){
@@ -50,7 +57,7 @@ void command_parser_fsm (){
 			if(compare(cmd_data,"OK",2)  == 1){
 				cmd_flag=2;
 			}
-			clear_cmd_data();
+			clear();
 		}
 		else {
 			cmd_data[idx_cmd_data++] = buffer[curr_idx_buffer];
@@ -67,7 +74,8 @@ void uart_communiation_fsm () {
 			cmd_flag = 0;
 			uart_state = UART_WAIT;
 			HAL_GPIO_TogglePin (LED_YELLOW_GPIO_Port, LED_YELLOW_Pin ) ;
-			printADC();
+			SCH_Init();
+			SCH_Add_Task(printADC, 0, 300);
 		}
 		break;
 	case UART_WAIT:
@@ -77,10 +85,7 @@ void uart_communiation_fsm () {
 			HAL_GPIO_TogglePin (LED_YELLOW_GPIO_Port, LED_YELLOW_Pin ) ;
 			nextLine();
 		}
-		else if (timer_flag[0]==1){
-			printADC();
-		}
-		break;
+		SCH_Dispatch_Tasks();
 	}
 }
 void printADC(){
@@ -89,12 +94,12 @@ void printADC(){
 	HAL_ADC_Stop(&hadc1);
 	int len = sprintf ( strr , "\r\n!ADC=%d#\r\n", ADC_value );
 	HAL_UART_Transmit (&huart2 , (void *) strr, len, 1000);
-	setTimer(0,300);
+	//setTimer(0,300);
 }
 void nextLine(){
 	HAL_UART_Transmit (&huart2 , "\r", 1, 1000);
 }
-void clear_cmd_data(){
+void clear(){
 	for(int i=0;i<MAX_BUFFER_SIZE;i++){
 		cmd_data[i]="\0";
 	}
