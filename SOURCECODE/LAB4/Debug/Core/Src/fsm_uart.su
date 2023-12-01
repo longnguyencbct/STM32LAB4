@@ -1,0 +1,6 @@
+fsm_uart.c:34:6:command_parser_fsm	8	static
+fsm_uart.c:70:6:uart_communiation_fsm	8	static
+fsm_uart.c:91:6:printADC	16	static
+fsm_uart.c:99:6:nextLine	8	static
+fsm_uart.c:102:6:clear	16	static
+fsm_uart.c:108:5:compare	32	static
